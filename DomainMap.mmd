@@ -1,0 +1,41 @@
+graph TB
+    subgraph DOMAIN["🏢 DOMAINE MÉTIER : Gestion du Transport Urbain"]
+        subgraph CORE["⭐ SOUS-DOMAINES CORE (Cœur Métier)"]
+            BILL["💳 Billetterie & Validation<br/>---<br/>• Achat de tickets<br/>• Validation titres<br/>• Gestion cycle de vie<br/><br/>Complexité: HAUTE<br/>Différenciation: ÉLEVÉE"]
+            SUB["📅 Gestion des Abonnements<br/>---<br/>• Souscription<br/>• Renouvellement auto<br/>• Tarification complexe<br/><br/>Complexité: HAUTE<br/>Différenciation: ÉLEVÉE"]
+            SCHED["🚍 Planification & Horaires<br/>---<br/>• Lignes et trajets<br/>• Optimisation horaires<br/>• Gestion perturbations<br/><br/>Complexité: MOYENNE<br/>Différenciation: MOYENNE"]
+        end
+        
+        subgraph SUPPORT["🔧 SOUS-DOMAINES SUPPORT"]
+            TRACK["📍 Géolocalisation & Suivi<br/>---<br/>• Tracking GPS temps réel<br/>• Calcul ETA<br/>• Détection retards<br/><br/>Complexité: MOYENNE<br/>Différenciation: FAIBLE"]
+            NOTIF["📬 Notifications & Alertes<br/>---<br/>• Envoi SMS/Email/Push<br/>• Alertes retard/annulation<br/>• Gestion préférences<br/><br/>Complexité: FAIBLE<br/>Différenciation: FAIBLE"]
+        end
+        
+        subgraph GENERIC["⚙️ SOUS-DOMAINES GÉNÉRIQUES"]
+            USER["👤 Gestion Utilisateurs<br/>---<br/>• Authentification<br/>• Profils (Passager/Conducteur)<br/>• Autorisation<br/><br/>Solution: Keycloak/Auth0"]
+            PAY["💰 Paiement<br/>---<br/>• Traitement paiements<br/>• Moyens de paiement<br/>• Remboursements<br/><br/>Solution: Stripe/PayPal"]
+        end
+    end
+    
+    %% Relations de dépendance
+    BILL -.->|utilise| PAY
+    SUB -.->|utilise| PAY
+    BILL -.->|notifie via| NOTIF
+    SUB -.->|notifie via| NOTIF
+    SCHED -.->|notifie via| NOTIF
+    SCHED -.->|données pour| TRACK
+    BILL -->|authentification| USER
+    SUB -->|authentification| USER
+    SCHED -->|authentification| USER
+    TRACK -->|authentification| USER
+    
+    %% Styles
+    classDef coreStyle fill:#ff6b6b,stroke:#c92a2a,stroke-width:3px,color:#fff
+    classDef supportStyle fill:#4dabf7,stroke:#1971c2,stroke-width:2px,color:#fff
+    classDef genericStyle fill:#95c99b,stroke:#2f9e44,stroke-width:2px,color:#fff
+    classDef domainStyle fill:#f8f9fa,stroke:#495057,stroke-width:4px
+    
+    class BILL,SUB,SCHED coreStyle
+    class TRACK,NOTIF supportStyle
+    class USER,PAY genericStyle
+    class DOMAIN,CORE,SUPPORT,GENERIC domainStyle

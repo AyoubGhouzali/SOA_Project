@@ -1,0 +1,58 @@
+graph TB
+    subgraph EXTERNAL["🌐 SYSTÈMES EXTERNES"]
+        MAPS["Google Maps API<br/>OpenStreetMap"]
+        STRIPE["Stripe API<br/>PSP"]
+    end
+    
+    subgraph CONTEXTS["📦 BOUNDED CONTEXTS"]
+        USER["👤 User Management<br/><b>OHS</b><br/>---<br/>OAuth2/JWT"]
+        
+        TICKET["💳 Ticketing Context<br/>---<br/>• Achat tickets<br/>• Validation<br/>• Gestion tickets"]
+        
+        SUB["📅 Subscription Context<br/>---<br/>• Souscription<br/>• Renouvellement<br/>• Gestion abonnements"]
+        
+        SCHED["🚍 Scheduling Context<br/>---<br/>• Lignes & trajets<br/>• Horaires<br/>• Perturbations"]
+        
+        TRACK["📍 Tracking Context<br/><b>ACL</b><br/>---<br/>• GPS temps réel<br/>• Calcul ETA<br/>• Détection retards"]
+        
+        NOTIF["📬 Notification Context<br/>---<br/>• Envoi SMS/Email<br/>• Alertes<br/>• Templates"]
+        
+        PAY["💰 Payment Context<br/><b>ACL</b><br/>---<br/>• Transactions<br/>• Remboursements<br/>• Facturation"]
+    end
+    
+    %% Relations REST (synchrones)
+    USER -->|"REST<br/>Authentication"| TICKET
+    USER -->|"REST<br/>Authentication"| SUB
+    USER -->|"REST<br/>Authentication"| SCHED
+    USER -->|"REST<br/>Authentication"| TRACK
+    
+    TICKET -->|"REST<br/>Customer-Supplier<br/>Process Payment"| PAY
+    SUB -->|"REST<br/>Customer-Supplier<br/>Process Payment"| PAY
+    
+    SCHED -->|"REST<br/>Partnership<br/>Get Bus Position"| TRACK
+    
+    %% Relations Event-Driven (asynchrones)
+    TICKET -.->|"EVENT<br/>TicketPurchased<br/>TicketValidated"| NOTIF
+    SUB -.->|"EVENT<br/>SubscriptionCreated<br/>SubscriptionExpiring"| NOTIF
+    SCHED -.->|"EVENT<br/>ScheduleDelayed<br/>TripCancelled"| NOTIF
+    PAY -.->|"EVENT<br/>PaymentProcessed<br/>PaymentFailed"| TICKET
+    PAY -.->|"EVENT<br/>PaymentProcessed<br/>PaymentFailed"| SUB
+    TRACK -.->|"EVENT<br/>BusLocationUpdated"| SCHED
+    
+    %% Anti-Corruption Layers
+    TRACK -->|"ACL<br/>REST API"| MAPS
+    PAY -->|"ACL<br/>REST API"| STRIPE
+    
+    %% Shared Kernel
+    TICKET <-->|"Shared Kernel<br/>Tarification"| SUB
+    
+    %% Styles
+    classDef coreContext fill:#ff6b6b,stroke:#c92a2a,stroke-width:3px,color:#fff
+    classDef supportContext fill:#4dabf7,stroke:#1971c2,stroke-width:2px,color:#fff
+    classDef genericContext fill:#95c99b,stroke:#2f9e44,stroke-width:2px,color:#fff
+    classDef externalSystem fill:#ffd43b,stroke:#f59f00,stroke-width:2px,color:#000
+    
+    class TICKET,SUB,SCHED coreContext
+    class TRACK,NOTIF supportContext
+    class USER,PAY genericContext
+    class MAPS,STRIPE externalSystem
