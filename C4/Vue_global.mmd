@@ -1,0 +1,30 @@
+graph TB
+    subgraph EXTERNAL["Acteurs & Systèmes Externes"]
+        PASSENGER[👤 Passager<br/>Achète tickets<br/>Consulte horaires]
+        DRIVER[🚗 Conducteur<br/>Valide tickets<br/>Suit trajets]
+        ADMIN[👨‍💼 Administrateur<br/>Gère lignes<br/>Supervise système]
+        
+        STRIPE[💳 Stripe API<br/>Traitement paiements]
+        MAPS[🗺️ Google Maps<br/>Géolocalisation<br/>Calcul itinéraires]
+        SMS[📱 Service SMS<br/>Twilio/Nexmo]
+        EMAIL[📧 Service Email<br/>SendGrid/SES]
+    end
+    
+    SYSTEM[🚍 Système de Gestion<br/>Transport Urbain<br/>---<br/>Gestion tickets, abonnements<br/>Suivi temps réel<br/>Notifications]
+    
+    PASSENGER -->|Achète tickets<br/>Consulte horaires| SYSTEM
+    DRIVER -->|Valide tickets<br/>Démarre voyages| SYSTEM
+    ADMIN -->|Configure lignes<br/>Supervise| SYSTEM
+    
+    SYSTEM -->|Traite paiements| STRIPE
+    SYSTEM -->|Calcule itinéraires<br/>Suit position bus| MAPS
+    SYSTEM -->|Envoie SMS| SMS
+    SYSTEM -->|Envoie emails| EMAIL
+    
+    classDef userStyle fill:#a8dadc,stroke:#457b9d,stroke-width:2px
+    classDef systemStyle fill:#e63946,stroke:#9d0208,stroke-width:4px
+    classDef externalStyle fill:#ffd60a,stroke:#d4a017,stroke-width:2px
+    
+    class PASSENGER,DRIVER,ADMIN userStyle
+    class SYSTEM systemStyle
+    class STRIPE,MAPS,SMS,EMAIL externalStyle

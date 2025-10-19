@@ -1,0 +1,82 @@
+graph TB
+    subgraph USERS["👥 Utilisateurs"]
+        WEB[🌐 Application Web<br/>React/Vue.js<br/>Port 3000]
+        BUSUI[🖥️ Interface Bus<br/>Web embarquée<br/>Validation tickets]
+        ADMINUI[⚙️ Admin Portal<br/>Gestion système]
+    end
+    
+    subgraph GATEWAY["🔐 Couche API"]
+        APIGW[API Gateway<br/>Kong/Spring Cloud Gateway<br/>Port 8080<br/>---<br/>Routing, Auth, Rate Limiting]
+    end
+    
+    subgraph SERVICES["⚙️ Microservices"]
+        USER[👤 User Service<br/>Spring Boot<br/>Port 8081<br/>---<br/>Auth, Profils]
+        TICKET[🎫 Ticketing Service<br/>Spring Boot<br/>Port 8082<br/>---<br/>Tickets, Commandes]
+        SUB[📅 Subscription Service<br/>Spring Boot<br/>Port 8083<br/>---<br/>Abonnements]
+        SCHED[🚍 Scheduling Service<br/>Spring Boot<br/>Port 8084<br/>---<br/>Lignes, Horaires]
+        TRACK[📍 Tracking Service<br/>Node.js<br/>Port 8085<br/>---<br/>GPS, ETA]
+        NOTIF[📬 Notification Service<br/>Node.js<br/>Port 8086<br/>---<br/>Email, SMS, Push]
+        PAY[💰 Payment Service<br/>Spring Boot<br/>Port 8087<br/>---<br/>Transactions]
+    end
+    
+    subgraph DATA["💾 Bases de Données"]
+        USERDB[(User DB<br/>PostgreSQL)]
+        TICKETDB[(Ticketing DB<br/>PostgreSQL)]
+        SUBDB[(Subscription DB<br/>PostgreSQL)]
+        SCHEDDB[(Scheduling DB<br/>PostgreSQL)]
+        TRACKDB[(Tracking DB<br/>MongoDB)]
+        NOTIFDB[(Notification DB<br/>MongoDB)]
+        PAYDB[(Payment DB<br/>PostgreSQL)]
+    end
+    
+    subgraph INFRA["🔧 Infrastructure"]
+        BROKER[📨 Message Broker<br/>Kafka/RabbitMQ<br/>Event Bus]
+        CACHE[⚡ Redis Cache<br/>Session, ETA]
+        VAULT[🔒 Vault<br/>Secrets Management]
+    end
+    
+    subgraph EXTERNAL["🌐 Services Externes"]
+        STRIPE[💳 Stripe API]
+        MAPS[🗺️ Google Maps API]
+        SMS_EXT[📱 Twilio]
+        EMAIL_EXT[📧 SendGrid]
+    end
+    
+    WEB --> APIGW
+    BUSUI --> APIGW
+    ADMINUI --> APIGW
+    
+    APIGW --> USER
+    APIGW --> TICKET
+    APIGW --> SUB
+    APIGW --> SCHED
+    APIGW --> TRACK
+    
+    USER --> USERDB
+    TICKET --> TICKETDB
+    SUB --> SUBDB
+    SCHED --> SCHEDDB
+    TRACK --> TRACKDB
+    NOTIF --> NOTIFDB
+    PAY --> PAYDB
+    
+    TICKET -.->|Events| BROKER
+    SUB -.->|Events| BROKER
+    SCHED -.->|Events| BROKER
+    TRACK -.->|Events| BROKER
+    PAY -.->|Events| BROKER
+    
+    BROKER -.->|Subscribe| NOTIF
+    BROKER -.->|Subscribe| TICKET
+    BROKER -.->|Subscribe| SUB
+    
+    TRACK --> CACHE
+    TICKET --> CACHE
+    
+    PAY --> STRIPE
+    TRACK --> MAPS
+    NOTIF --> SMS_EXT
+    NOTIF --> EMAIL_EXT
+    
+    USER --> VAULT
+    PAY --> VAULT

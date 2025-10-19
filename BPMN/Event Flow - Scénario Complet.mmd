@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant User
+    participant Ticketing
+    participant Payment
+    participant Notification
+    participant Tracking
+    
+    User->>Ticketing: PurchaseTicketCommand
+    Ticketing->>Ticketing: OrderCreated
+    Ticketing->>Payment: OrderConfirmed
+    Payment->>Payment: PaymentProcessed
+    Payment->>Ticketing: PaymentProcessed
+    Ticketing->>Ticketing: TicketPurchased
+    Ticketing->>Notification: TicketPurchased
+    Notification->>User: Email avec Ticket
+    
+    Note over User,Ticketing: Quelques heures plus tard...
+    
+    User->>Ticketing: ValidateTicketCommand
+    Ticketing->>Ticketing: TicketValidated
+    Ticketing->>Tracking: TicketValidated
+    Tracking->>Tracking: Check Fraud
+    
+    alt No Fraud
+        Tracking->>Ticketing: ValidationConfirmed
+    else Fraud Detected
+        Tracking->>Ticketing: FraudDetected
+        Ticketing->>Ticketing: MarkSuspicious
+    end
