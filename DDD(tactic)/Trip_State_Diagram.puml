@@ -1,0 +1,35 @@
+@startuml Trip_State_Diagram
+
+[*] --> SCHEDULED : Trip Created
+
+SCHEDULED --> IN_PROGRESS : start()\n[bus & driver assigned]
+SCHEDULED --> CANCELLED : cancel()\n[maintenance/incident]
+
+IN_PROGRESS --> IN_PROGRESS : updatePosition()
+IN_PROGRESS --> DELAYED : reportDelay()\n[delay > 10 min]
+IN_PROGRESS --> COMPLETED : complete()\n[reached final stop]
+IN_PROGRESS --> CANCELLED : cancel()\n[emergency]
+
+DELAYED --> DELAYED : updatePosition()
+DELAYED --> COMPLETED : complete()
+DELAYED --> CANCELLED : cancel()
+
+COMPLETED --> [*]
+CANCELLED --> [*]
+
+note right of SCHEDULED
+    Trip planned.
+    Waiting for start time.
+end note
+
+note right of IN_PROGRESS
+    Trip started.
+    Bus on route.
+end note
+
+note right of DELAYED
+    Trip delayed > 10 min.
+    Passengers notified.
+end note
+
+@enduml
