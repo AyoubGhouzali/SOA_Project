@@ -1,0 +1,132 @@
+@startuml Ticketing_Context_Class_Diagram
+
+' Agrégat Ticket
+class Ticket <<Aggregate Root>> {
+    - ticketId: TicketId
+    - userId: UserId
+    - type: TicketType
+    - status: TicketStatus
+    - price: Money
+    - validityPeriod: ValidityPeriod
+    - remainingValidations: int
+    - purchasedAt: Instant
+    - activatedAt: Instant
+    --
+    + validate(busId, lineNumber): void
+    + activate(): void
+    + isExpired(): boolean
+    + canBeValidated(): boolean
+}
+
+class TicketId <<Value Object>> {
+    - value: String
+    --
+    + TicketId(value: String)
+}
+
+enum TicketType <<Value Object>> {
+    SINGLE
+    CARNET_10
+    DAY_PASS
+    --
+    + getValidityDuration(): Duration
+    + getMaxValidations(): int
+}
+
+enum TicketStatus <<Value Object>> {
+    PURCHASED
+    ACTIVE
+    USED
+    EXPIRED
+    CANCELLED
+}
+
+class ValidityPeriod <<Value Object>> {
+    - startTime: Instant
+    - endTime: Instant
+    --
+    + isExpired(): boolean
+    + remainingTime(): Duration
+}
+
+class Money <<Value Object>> {
+    - amount: BigDecimal
+    - currency: Currency
+    --
+    + add(other: Money): Money
+    + multiply(multiplier: int): Money
+}
+
+' Agrégat Order
+class Order <<Aggregate Root>> {
+    - orderId: OrderId
+    - userId: UserId
+    - orderLines: List<OrderLine>
+    - totalAmount: Money
+    - status: OrderStatus
+    - paymentId: PaymentId
+    --
+    + addOrderLine(type, quantity, price): void
+    + confirm(paymentId): void
+    + calculateTotal(): Money
+}
+
+class OrderLine <<Entity>> {
+    - ticketType: TicketType
+    - quantity: int
+    - unitPrice: Money
+    --
+    + lineTotal(): Money
+}
+
+enum OrderStatus <<Value Object>> {
+    DRAFT
+    CONFIRMED
+    PAID
+    CANCELLED
+}
+
+' Services
+class TicketPricingService <<Domain Service>> {
+    + calculatePrice(type, category): Money
+    + applyDiscount(amount, code): Money
+}
+
+class TicketValidationService <<Domain Service>> {
+    + validateTicket(ticketId, busId, line): ValidationResult
+    + checkFraudDetection(ticketId, location): boolean
+}
+
+' Repositories
+interface TicketRepository <<Repository>> {
+    + save(ticket: Ticket): void
+    + findById(id: TicketId): Optional<Ticket>
+    + findActiveTickets(userId): List<Ticket>
+}
+
+interface OrderRepository <<Repository>> {
+    + save(order: Order): void
+    + findById(id: OrderId): Optional<Order>
+}
+
+' Relations
+Ticket "1" *-- "1" TicketId
+Ticket "1" *-- "1" TicketType
+Ticket "1" *-- "1" TicketStatus
+Ticket "1" *-- "1" ValidityPeriod
+Ticket "1" *-- "1" Money
+
+Order "1" *-- "1" OrderId
+Order "1" *-- "*" OrderLine
+Order "1" *-- "1" Money
+Order "1" *-- "1" OrderStatus
+
+OrderLine "1" *-- "1" TicketType
+OrderLine "1" *-- "1" Money
+
+TicketRepository ..> Ticket : persists
+OrderRepository ..> Order : persists
+TicketPricingService ..> Money : uses
+TicketValidationService ..> Ticket : validates
+
+@enduml
