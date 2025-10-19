@@ -1,0 +1,78 @@
+@startuml
+actor "Passager" as User
+participant "API Gateway" as Gateway
+participant "Ticketing Service" as Ticketing
+participant "Payment Service" as Payment
+participant "Notification Service" as Notification
+database "Ticketing DB" as TicketDB
+database "Payment DB" as PaymentDB
+participant "Message Broker" as Broker
+
+User -> Gateway: POST /tickets/purchase\n{ticketType, quantity, paymentMethod}
+activate Gateway
+
+Gateway -> Ticketing: PurchaseTicketCommand
+activate Ticketing
+
+Ticketing -> Ticketing: Create Order (DRAFT)
+Ticketing -> Ticketing: Calculate Total Amount
+Ticketing -> TicketDB: Save Order
+Ticketing -> Ticketing: Confirm Order
+
+Ticketing -> Broker: Publish OrderConfirmed Event
+activate Broker
+Broker --> Payment: OrderConfirmed
+deactivate Broker
+
+activate Payment
+Payment -> Payment: Process Payment\nvia Stripe API
+Payment -> PaymentDB: Save Payment
+
+alt Payment Success
+    Payment -> Broker: Publish PaymentProcessed Event
+    activate Broker
+    Broker --> Ticketing: PaymentProcessed
+    deactivate Broker
+    
+    Ticketing -> Ticketing: Generate Tickets
+    Ticketing -> TicketDB: Save Tickets
+    Ticketing -> Ticketing: Update Order (PAID)
+    
+    Ticketing -> Broker: Publish TicketPurchased Event
+    activate Broker
+    Broker --> Notification: TicketPurchased
+    deactivate Broker
+    
+    activate Notification
+    Notification -> Notification: Send Email\nwith Tickets
+    deactivate Notification
+    
+    Ticketing --> Gateway: 200 OK {tickets}
+    Gateway --> User: Tickets Created
+
+else Payment Failed
+    Payment -> Broker: Publish PaymentFailed Event
+    activate Broker
+    Broker --> Ticketing: PaymentFailed
+    deactivate Broker
+    
+    Ticketing -> Ticketing: Cancel Order
+    Ticketing -> TicketDB: Update Order (CANCELLED)
+    
+    Ticketing -> Broker: Publish OrderCancelled Event
+    activate Broker
+    Broker --> Notification: OrderCancelled
+    deactivate Broker
+    
+    activate Notification
+    Notification -> Notification: Send Failure Email
+    deactivate Notification
+    
+    Ticketing --> Gateway: 400 Bad Request
+    Gateway --> User: Payment Failed
+end
+
+deactivate Payment
+deactivate Ticketing
+deactivate Gateway
+@enduml
