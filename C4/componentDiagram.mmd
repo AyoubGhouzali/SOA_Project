@@ -1,0 +1,65 @@
+flowchart TB
+    subgraph API["API Layer"]
+        REST["REST Controllers<br/>• TicketController<br/>• OrderController"]
+    end
+    
+    subgraph APP["Application Layer"]
+        UC_PURCHASE["PurchaseTicketUseCase<br/>Orchestration achat"]
+        UC_VALIDATE["ValidateTicketUseCase<br/>Validation ticket"]
+        UC_ACTIVATE["ActivateTicketUseCase<br/>Activation ticket"]
+        MAPPER["DTOMapper<br/>Conversions"]
+    end
+    
+    subgraph DOMAIN["Domain Layer"]
+        TICKET_AGG["Ticket Aggregate<br/>• validate()<br/>• activate()"]
+        ORDER_AGG["Order Aggregate<br/>• confirm()<br/>• cancel()"]
+        PRICING["TicketPricingService<br/>Calcul tarifs"]
+        VALIDATION["TicketValidationService<br/>Règles validation"]
+        TICKET_REPO["ITicketRepository"]
+        ORDER_REPO["IOrderRepository"]
+        EVENTS["Domain Events<br/>• TicketPurchased<br/>• TicketValidated"]
+    end
+    
+    subgraph INFRA["Infrastructure Layer"]
+        JPA_TICKET["JpaTicketRepository<br/>Implémentation JPA"]
+        JPA_ORDER["JpaOrderRepository<br/>Implémentation JPA"]
+        KAFKA_PUB["KafkaEventPublisher<br/>Publication événements"]
+        CACHE_ADAPTER["RedisCacheAdapter<br/>Mise en cache"]
+    end
+    
+    subgraph EXTERNAL["External Systems"]
+        DB[("PostgreSQL")]
+        KAFKA["Kafka Broker"]
+        REDIS[("Redis")]
+    end
+    
+    REST --> UC_PURCHASE
+    REST --> UC_VALIDATE
+    REST --> UC_ACTIVATE
+    
+    UC_PURCHASE --> TICKET_AGG
+    UC_PURCHASE --> ORDER_AGG
+    UC_PURCHASE --> PRICING
+    UC_PURCHASE --> TICKET_REPO
+    UC_PURCHASE --> ORDER_REPO
+    
+    UC_VALIDATE --> TICKET_AGG
+    UC_VALIDATE --> VALIDATION
+    UC_VALIDATE --> TICKET_REPO
+    
+    UC_ACTIVATE --> TICKET_AGG
+    UC_ACTIVATE --> TICKET_REPO
+    
+    TICKET_AGG --> EVENTS
+    ORDER_AGG --> EVENTS
+    
+    TICKET_REPO -.-> JPA_TICKET
+    ORDER_REPO -.-> JPA_ORDER
+    
+    JPA_TICKET --> DB
+    JPA_ORDER --> DB
+    EVENTS --> KAFKA_PUB
+    KAFKA_PUB --> KAFKA
+    
+    UC_PURCHASE --> CACHE_ADAPTER
+    CACHE_ADAPTER --> REDIS
