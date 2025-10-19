@@ -1,0 +1,17 @@
+graph TB
+    A([Tracking GPS]) --> B[Calculer Position<br/>vs Horaire]
+    B --> C{Retard<br/>> 10 min?}
+    C -->|Non| D([Continue<br/>Tracking])
+    C -->|Oui| E[Publier<br/>TripDelayed]
+    E --> F[Identifier<br/>Passagers Concernés]
+    F --> G[Envoyer<br/>Notifications Push]
+    G --> H[Mettre à jour<br/>Horaires Affichés]
+    H --> I{Retard<br/>> 30 min?}
+    I -->|Non| D
+    I -->|Oui| J{Annulation<br/>nécessaire?}
+    J -->|Non| D
+    J -->|Oui| K[Annuler<br/>Voyage]
+    K --> L[Publier<br/>TripCancelled]
+    L --> M[Proposer<br/>Alternatives]
+    M --> N[Notifier<br/>Passagers]
+    N --> O([Fin])

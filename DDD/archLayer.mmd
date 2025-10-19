@@ -1,0 +1,45 @@
+graph TB
+    subgraph PRESENTATION["🎨 Presentation Layer"]
+        REST["REST Controllers<br/>• TicketController<br/>• OrderController"]
+        GRAPHQL["GraphQL Resolvers<br/>• TicketResolver"]
+    end
+    
+    subgraph APPLICATION["⚙️ Application Layer"]
+        USECASE["Use Cases<br/>• PurchaseTicketUseCase<br/>• ValidateTicketUseCase"]
+        COMMAND["Commands<br/>• PurchaseTicketCommand<br/>• ValidateTicketCommand"]
+        DTO["DTOs<br/>• TicketDTO<br/>• OrderDTO"]
+    end
+    
+    subgraph DOMAIN["💎 Domain Layer"]
+        ENTITY["Entities & Aggregates<br/>• Ticket<br/>• Order"]
+        VO["Value Objects<br/>• TicketId<br/>• Money<br/>• ValidityPeriod"]
+        SERVICE["Domain Services<br/>• TicketPricingService<br/>• TicketValidationService"]
+        REPO["Repository Interfaces<br/>• TicketRepository<br/>• OrderRepository"]
+        EVENT["Domain Events<br/>• TicketPurchased<br/>• TicketValidated"]
+    end
+    
+    subgraph INFRASTRUCTURE["🔧 Infrastructure Layer"]
+        PERSIST["Persistence<br/>• JpaTicketRepository<br/>• JpaOrderRepository"]
+        MSG["Messaging<br/>• KafkaEventPublisher<br/>• RabbitMQListener"]
+        EXTERN["External Services<br/>• StripePaymentAdapter<br/>• GoogleMapsAdapter"]
+    end
+    
+    REST --> USECASE
+    GRAPHQL --> USECASE
+    USECASE --> ENTITY
+    USECASE --> SERVICE
+    USECASE --> REPO
+    ENTITY --> VO
+    ENTITY --> EVENT
+    PERSIST -.implements.-> REPO
+    MSG -.publishes.-> EVENT
+    
+    classDef presentationStyle fill:#ffcccb,stroke:#d32f2f
+    classDef applicationStyle fill:#c8e6c9,stroke:#388e3c
+    classDef domainStyle fill:#bbdefb,stroke:#1976d2
+    classDef infraStyle fill:#fff9c4,stroke:#f57f17
+    
+    class REST,GRAPHQL presentationStyle
+    class USECASE,COMMAND,DTO applicationStyle
+    class ENTITY,VO,SERVICE,REPO,EVENT domainStyle
+    class PERSIST,MSG,EXTERN infraStyle

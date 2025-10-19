@@ -1,0 +1,19 @@
+graph TB
+    A([Job Quotidien]) --> B{Abonnements<br/>expirant<br/>dans 7j?}
+    B -->|Non| Z([Fin])
+    B -->|Oui| C{Auto-renewal<br/>activé?}
+    C -->|Non| D[Envoyer<br/>Rappel Email]
+    D --> Z
+    C -->|Oui| E[Traiter<br/>Paiement]
+    E --> F{Paiement<br/>Réussi?}
+    F -->|Oui| G[Étendre<br/>Période]
+    G --> H[Envoyer<br/>Confirmation]
+    H --> Z
+    F -->|Non| I{Tentative<br/>< 3?}
+    I -->|Oui| J[Planifier<br/>Retry 24h]
+    J --> K[Envoyer<br/>Avertissement]
+    K --> Z
+    I -->|Non| L[Désactiver<br/>Auto-renewal]
+    L --> M[Marquer<br/>EXPIRÉ]
+    M --> N[Envoyer<br/>Email Expiration]
+    N --> Z
