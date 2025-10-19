@@ -1,0 +1,59 @@
+@startuml
+actor "Conducteur" as Driver
+participant "Mobile App" as App
+participant "API Gateway" as Gateway
+participant "Ticketing Service" as Ticketing
+participant "Tracking Service" as Tracking
+database "Ticketing DB" as TicketDB
+participant "Message Broker" as Broker
+
+Driver -> App: Scan QR Code
+activate App
+
+App -> Gateway: POST /tickets/{ticketId}/validate\n{busId, lineNumber, location}
+activate Gateway
+
+Gateway -> Ticketing: ValidateTicketCommand
+activate Ticketing
+
+Ticketing -> TicketDB: Find Ticket by ID
+TicketDB --> Ticketing: Ticket
+
+Ticketing -> Ticketing: Check if Active
+Ticketing -> Ticketing: Check if Expired
+Ticketing -> Ticketing: Check Remaining\nValidations
+
+alt Ticket Valid
+    Ticketing -> Ticketing: Decrement Validations
+    Ticketing -> Ticketing: Update Status\n(if fully used)
+    Ticketing -> TicketDB: Save Ticket
+    
+    Ticketing -> Broker: Publish TicketValidated Event
+    activate Broker
+    Broker --> Tracking: TicketValidated
+    deactivate Broker
+    
+    activate Tracking
+    Tracking -> Tracking: Check Fraud\n(location vs bus position)
+    
+    alt Fraud Detected
+        Tracking -> Broker: Publish FraudDetected Event
+        Broker --> Ticketing: FraudDetected
+        Ticketing -> Ticketing: Mark as Suspicious
+    end
+    deactivate Tracking
+    
+    Ticketing --> Gateway: 200 OK\n{validationSuccess}
+    Gateway --> App: Validation Success
+    App --> Driver: ✅ Ticket Valid
+
+else Ticket Invalid
+    Ticketing --> Gateway: 400 Bad Request\n{errorCode, message}
+    Gateway --> App: Validation Failed
+    App --> Driver: ❌ Invalid Ticket\n(Expired/Used)
+end
+
+deactivate Ticketing
+deactivate Gateway
+deactivate App
+@enduml
