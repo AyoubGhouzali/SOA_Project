@@ -1,0 +1,80 @@
+@startuml
+participant "Scheduler" as Cron
+participant "Subscription Service" as Subscription
+participant "Payment Service" as Payment
+participant "Notification Service" as Notification
+database "Subscription DB" as SubDB
+participant "Message Broker" as Broker
+
+Cron -> Subscription: Daily Job\nCheck Expiring Subscriptions
+activate Subscription
+
+Subscription -> SubDB: Find Subscriptions\nExpiring in 7 days
+SubDB --> Subscription: List<Subscription>
+
+loop For each Subscription with AutoRenewal
+    Subscription -> Subscription: Check AutoRenewal = true
+    
+    Subscription -> Broker: Publish\nSubscriptionRenewalInitiated
+    activate Broker
+    Broker --> Payment: SubscriptionRenewalInitiated
+    deactivate Broker
+    
+    activate Payment
+    Payment -> Payment: Process Payment\nwith Saved Payment Method
+    
+    alt Payment Success
+        Payment -> Broker: Publish PaymentProcessed
+        activate Broker
+        Broker --> Subscription: PaymentProcessed
+        deactivate Broker
+        
+        Subscription -> Subscription: Extend Period\n(+1 month/quarter/year)
+        Subscription -> SubDB: Update Subscription
+        
+        Subscription -> Broker: Publish SubscriptionRenewed
+        activate Broker
+        Broker --> Notification: SubscriptionRenewed
+        deactivate Broker
+        
+        activate Notification
+        Notification -> Notification: Send Confirmation Email
+        deactivate Notification
+        
+    else Payment Failed (1st attempt)
+        Payment -> Broker: Publish PaymentFailed
+        activate Broker
+        Broker --> Subscription: PaymentFailed
+        deactivate Broker
+        
+        Subscription -> Subscription: Schedule Retry\n(in 24h)
+        
+        Subscription -> Broker: Publish\nSubscriptionRenewalFailed
+        activate Broker
+        Broker --> Notification: SubscriptionRenewalFailed
+        deactivate Broker
+        
+        activate Notification
+        Notification -> Notification: Send Warning Email\n"Update Payment Method"
+        deactivate Notification
+        
+    else Payment Failed (3rd attempt)
+        Subscription -> Subscription: Disable AutoRenewal
+        Subscription -> Subscription: Mark as EXPIRED
+        Subscription -> SubDB: Update Subscription
+        
+        Subscription -> Broker: Publish SubscriptionExpired
+        activate Broker
+        Broker --> Notification: SubscriptionExpired
+        deactivate Broker
+        
+        activate Notification
+        Notification -> Notification: Send Expiration Email
+        deactivate Notification
+    end
+    
+    deactivate Payment
+end
+
+deactivate Subscription
+@enduml
