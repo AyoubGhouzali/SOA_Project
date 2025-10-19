@@ -1,0 +1,84 @@
+@startuml Scheduling_Context_Class_Diagram
+
+class Line <<Aggregate Root>> {
+    - lineId: LineId
+    - lineNumber: String
+    - name: String
+    - routes: List<Route>
+    - status: LineStatus
+    --
+    + addRoute(route): void
+    + updateSchedule(schedule): void
+}
+
+class Route <<Entity>> {
+    - routeId: RouteId
+    - direction: RouteDirection
+    - stops: List<Stop>
+    - schedules: List<Schedule>
+    --
+    + addStop(stop): void
+}
+
+class Stop <<Value Object>> {
+    - stopId: StopId
+    - name: String
+    - location: GeoLocation
+    - scheduledTime: LocalTime
+}
+
+class Schedule <<Value Object>> {
+    - departureTime: LocalTime
+    - dayOfWeek: DayOfWeek
+}
+
+class Trip <<Aggregate Root>> {
+    - tripId: TripId
+    - lineId: LineId
+    - routeId: RouteId
+    - busId: BusId
+    - driverId: DriverId
+    - scheduledDepartureTime: LocalDateTime
+    - status: TripStatus
+    --
+    + start(): void
+    + complete(): void
+    + reportDelay(minutes): void
+}
+
+enum TripStatus <<Value Object>> {
+    SCHEDULED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+    DELAYED
+}
+
+class GeoLocation <<Value Object>> {
+    - latitude: double
+    - longitude: double
+}
+
+interface LineRepository <<Repository>> {
+    + save(line): void
+    + findById(id): Optional<Line>
+    + findAll(): List<Line>
+}
+
+interface TripRepository <<Repository>> {
+    + save(trip): void
+    + findById(id): Optional<Trip>
+    + findActiveTrips(): List<Trip>
+}
+
+Line "1" *-- "*" Route
+Route "1" *-- "*" Stop
+Route "1" *-- "*" Schedule
+Stop "1" *-- "1" GeoLocation
+
+Trip "1" *-- "1" TripStatus
+
+LineRepository ..> Line
+TripRepository ..> Trip
+
+@enduml
