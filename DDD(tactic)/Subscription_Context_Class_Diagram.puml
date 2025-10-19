@@ -1,0 +1,73 @@
+@startuml Subscription_Context_Class_Diagram
+
+class Subscription <<Aggregate Root>> {
+    - subscriptionId: SubscriptionId
+    - userId: UserId
+    - plan: SubscriptionPlan
+    - status: SubscriptionStatus
+    - currentPeriod: SubscriptionPeriod
+    - price: Money
+    - autoRenewal: boolean
+    - paymentMethodId: PaymentMethodId
+    --
+    + renew(): void
+    + suspend(start, end): void
+    + cancel(reason): void
+    + isActive(): boolean
+}
+
+class SubscriptionId <<Value Object>> {
+    - value: String
+}
+
+enum SubscriptionPlan <<Value Object>> {
+    MONTHLY
+    QUARTERLY
+    ANNUAL
+    --
+    + getDuration(): Duration
+    + getPrice(): Money
+}
+
+enum SubscriptionStatus <<Value Object>> {
+    ACTIVE
+    EXPIRED
+    SUSPENDED
+    CANCELLED
+}
+
+class SubscriptionPeriod <<Value Object>> {
+    - startDate: LocalDate
+    - endDate: LocalDate
+    --
+    + isActive(): boolean
+    + daysRemaining(): int
+    + extendBy(duration): SubscriptionPeriod
+}
+
+class Money <<Value Object>> {
+    - amount: BigDecimal
+    - currency: Currency
+}
+
+class SubscriptionRenewalService <<Domain Service>> {
+    + processAutoRenewal(subId): RenewalResult
+    + sendRenewalReminders(): void
+}
+
+interface SubscriptionRepository <<Repository>> {
+    + save(subscription): void
+    + findById(id): Optional<Subscription>
+    + findExpiringSubscriptions(date): List<Subscription>
+}
+
+Subscription "1" *-- "1" SubscriptionId
+Subscription "1" *-- "1" SubscriptionPlan
+Subscription "1" *-- "1" SubscriptionStatus
+Subscription "1" *-- "1" SubscriptionPeriod
+Subscription "1" *-- "1" Money
+
+SubscriptionRepository ..> Subscription
+SubscriptionRenewalService ..> Subscription
+
+@enduml
