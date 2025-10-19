@@ -1,0 +1,38 @@
+@startuml Subscription_State_Diagram
+
+[*] --> ACTIVE : Subscription Created\n& Payment Success
+
+ACTIVE --> ACTIVE : renew()\n[autoRenewal = true\n& payment success]
+
+ACTIVE --> SUSPENDED : suspend()\n[user request]
+ACTIVE --> EXPIRED : [end date reached\n& autoRenewal = false]
+ACTIVE --> EXPIRED : renew()\n[payment failed 3 times]
+ACTIVE --> CANCELLED : cancel()\n[user request]
+
+SUSPENDED --> ACTIVE : resume()
+SUSPENDED --> EXPIRED : [suspended period > 30 days]
+SUSPENDED --> CANCELLED : cancel()
+
+EXPIRED --> ACTIVE : reactivate()\n[user renews manually]
+EXPIRED --> [*]
+
+CANCELLED --> [*]
+
+note right of ACTIVE
+    Subscription is active.
+    User can use transport
+    unlimited during period.
+end note
+
+note right of SUSPENDED
+    Temporarily suspended.
+    End date extended.
+    (e.g., vacation)
+end note
+
+note right of EXPIRED
+    Subscription ended.
+    User needs to renew.
+end note
+
+@enduml
