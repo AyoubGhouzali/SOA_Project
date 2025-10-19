@@ -1,0 +1,39 @@
+@startuml Ticket_State_Diagram
+
+[*] --> PURCHASED : Ticket Purchased
+
+PURCHASED --> ACTIVE : activate()
+PURCHASED --> CANCELLED : cancel()
+
+ACTIVE --> USED : validate()\n[remainingValidations = 0]
+ACTIVE --> EXPIRED : [validityPeriod expired]
+ACTIVE --> CANCELLED : cancel()\n[refund requested]
+ACTIVE --> ACTIVE : validate()\n[remainingValidations > 0]
+
+USED --> [*]
+EXPIRED --> [*]
+CANCELLED --> [*]
+
+note right of PURCHASED
+    Ticket just purchased,
+    not yet activated.
+    Validity period not started.
+end note
+
+note right of ACTIVE
+    Ticket activated.
+    Can be validated on bus.
+    Validity period running.
+end note
+
+note right of USED
+    All validations consumed.
+    Ticket no longer usable.
+end note
+
+note right of EXPIRED
+    Validity period ended.
+    Cannot be used anymore.
+end note
+
+@enduml
